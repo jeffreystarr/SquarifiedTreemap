@@ -1,0 +1,627 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 9.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[     19581,        618]
+NotebookOptionsPosition[     17133,        532]
+NotebookOutlinePosition[     17874,        562]
+CellTagsIndexPosition[     17735,        555]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Squarified Treemap", "Title",
+ CellChangeTimes->{{3.60251229732694*^9, 3.602512300087603*^9}}],
+
+Cell[TextData[{
+ "A Functional Implementation in ",
+ StyleBox["Mathematica",
+  FontSlant->"Italic"]
+}], "Subtitle",
+ CellChangeTimes->{{3.6025123213022327`*^9, 3.602512336719819*^9}}],
+
+Cell["By Jeffrey Starr, 2014-02", "Subsubtitle",
+ CellChangeTimes->{{3.6025123424867687`*^9, 3.602512366358447*^9}}],
+
+Cell[CellGroupData[{
+
+Cell["Abstract", "Section",
+ CellChangeTimes->{{3.602512406917881*^9, 3.602512409112266*^9}}],
+
+Cell[TextData[{
+ "This paper presents an implementation of the Squarified Treemap algorithm \
+(originally published by Bruls, Huizing, and van Wijk)",
+ ButtonBox[Cell[TextData[StyleBox[ButtonBox["1"],
+  FontVariations->{"CompatibilityType"->"Superscript"}]], "Citation",
+  Editable->False,
+  TaggingRules->{NoteData -> RowBox[{
+       RowBox[{"M", ".", " ", "Bruls"}], ",", " ", 
+       RowBox[{"K", ".", " ", "Huizing"}], ",", " ", 
+       RowBox[{"and", " ", 
+         RowBox[{"J", ".", " ", "van"}], " ", "Wijk"}], ",", " ", 
+       RowBox[{
+        "\"Squarified treemaps,\"", " ", "in", " ", "Proceedings", " ", "of", 
+         " ", "the", " ", "Joint", " ", "Eurographics", " ", "and", " ", 
+         "IEEE", " ", "TCVG", " ", "Symposium", " ", "on", " ", 
+         "Visualization"}], ",", " ", 
+       RowBox[{
+         RowBox[{"pp", ".", " ", "33"}], "-", "42"}], ",", " ", "2000.", 
+       " "}]}],
+  BaseStyle->"Hyperlink",
+  ButtonData->"00007748"],
+ " for a single-level of hierarchy written in a functional style using the ",
+ StyleBox["Mathematica",
+  FontSlant->"Italic"],
+ " language."
+}], "Text",
+ CellChangeTimes->{{3.6025125470626707`*^9, 3.6025125808567944`*^9}, {
+  3.602512802489868*^9, 3.6025128025370903`*^9}, {3.60251284608927*^9, 
+  3.602512898216193*^9}, {3.602513643116025*^9, 3.602513643130681*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Introduction", "Section",
+ CellChangeTimes->{{3.6025124124305143`*^9, 3.602512413744054*^9}}],
+
+Cell[TextData[{
+ "A treemap is a popular visualization technique because of its density (high \
+data content per square inch) and ability to handle hierarchical data. \
+Treemaps visualize quantities by creating rectangles with areas that match \
+(proportionally, at least) the original quantities. Viewers compare values by \
+comparing areas. By using rectangles, treemaps are more dense than pie charts \
+and there is evidence humans can compare areas of rectangles than wedges of a \
+circle. Treemaps can also connote hierarchy by embedding rectangles in other \
+rectangles recursively. This technique is often used to help viewers find \
+files consuming excessive disk space by plotting the file size as the area of \
+the rectangle and embedding the file rectangles within other rectangles to \
+show the directory structure.",
+ ButtonBox[Cell[TextData[StyleBox[ButtonBox["2"],
+  FontVariations->{"CompatibilityType"->"Superscript"}]], "Citation",
+  Editable->False,
+  TaggingRules->{NoteData -> RowBox[{
+       RowBox[{"http", ":"}], "//", 
+       RowBox[{
+         RowBox[{
+           RowBox[{"en", ".", "wikipedia", ".", "org"}], "/", "wiki"}], "/", 
+         RowBox[{"File", ":", 
+           RowBox[{"Tree_Map", ".", "png"}]}]}]}]}],
+  BaseStyle->"Hyperlink",
+  ButtonData->"000035FD"]
+}], "Text",
+ CellChangeTimes->{{3.602512986095559*^9, 3.6025130406678047`*^9}, {
+  3.602513145579069*^9, 3.60251317483816*^9}, {3.602513217901408*^9, 
+  3.602513547911072*^9}, {3.602513643093647*^9, 3.602513643169352*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\<\
+Rectangle, the Core Data Structure\
+\>", "Section",
+ CellChangeTimes->{{3.6025124217268248`*^9, 3.6025124265904093`*^9}}],
+
+Cell["\<\
+The Squarified Treemap algorithm draws rectangles in other rectangles. Not \
+all treemap algorithms use rectangles, but rectangles are the most popular \
+choice.\
+\>", "Text",
+ CellChangeTimes->{{3.60251390688922*^9, 3.602513971931239*^9}}],
+
+Cell[TextData[{
+ StyleBox["Mathematica",
+  FontSlant->"Italic"],
+ " provides an existing data structure for a Rectangle which we will use \
+within this paper."
+}], "Text",
+ CellChangeTimes->{{3.602513982994248*^9, 3.602514013142123*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "Rectangle"}]], "Input",
+ CellChangeTimes->{{3.602513988328244*^9, 3.602513989804492*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox["\<\"\\!\\(\\*RowBox[{\\\"Rectangle\\\", \\\"[\\\", \
+RowBox[{RowBox[{\\\"{\\\", RowBox[{SubscriptBox[StyleBox[\\\"x\\\", \
+\\\"TI\\\"], StyleBox[\\\"min\\\", \\\"TI\\\"]], \\\",\\\", \
+SubscriptBox[StyleBox[\\\"y\\\", \\\"TI\\\"], StyleBox[\\\"min\\\", \
+\\\"TI\\\"]]}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{SubscriptBox[StyleBox[\\\"x\\\", \\\"TI\\\"], StyleBox[\\\"max\\\", \
+\\\"TI\\\"]], \\\",\\\", SubscriptBox[StyleBox[\\\"y\\\", \\\"TI\\\"], \
+StyleBox[\\\"max\\\", \\\"TI\\\"]]}], \\\"}\\\"}]}], \\\"]\\\"}]\\) is a \
+two-dimensional graphics primitive that represents a filled rectangle, \
+oriented parallel to the axes. \\n\\!\\(\\*RowBox[{\\\"Rectangle\\\", \\\"[\\\
+\", RowBox[{\\\"{\\\", RowBox[{SubscriptBox[StyleBox[\\\"x\\\", \\\"TI\\\"], \
+StyleBox[\\\"min\\\", \\\"TI\\\"]], \\\",\\\", \
+SubscriptBox[StyleBox[\\\"y\\\", \\\"TI\\\"], StyleBox[\\\"min\\\", \
+\\\"TI\\\"]]}], \\\"}\\\"}], \\\"]\\\"}]\\) corresponds to a unit square with \
+its bottom-left corner at \\!\\(\\*RowBox[{\\\"{\\\", \
+RowBox[{SubscriptBox[StyleBox[\\\"x\\\", \\\"TI\\\"], StyleBox[\\\"min\\\", \
+\\\"TI\\\"]], \\\",\\\", SubscriptBox[StyleBox[\\\"y\\\", \\\"TI\\\"], \
+StyleBox[\\\"min\\\", \\\"TI\\\"]]}], \\\"}\\\"}]\\).\"\>", "MSG"], 
+  "\[NonBreakingSpace]", 
+  ButtonBox[
+   StyleBox["\[RightSkeleton]", "SR"],
+   Active->True,
+   BaseStyle->"Link",
+   ButtonData->"paclet:ref/Rectangle"]}]], "Print", "PrintUsage",
+ CellChangeTimes->{3.602513991088416*^9},
+ CellTags->"Info3602488790-5614751"]
+}, Open  ]],
+
+Cell["\<\
+Note that x and y refer to Cartesian coordinates, not screen coordinates. \
+Beyond this data structure, we need several utility functions:\
+\>", "Text",
+ CellChangeTimes->{{3.602514066246089*^9, 3.602514093781376*^9}, {
+  3.602514593525462*^9, 3.602514606861079*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Coord", "[", 
+   RowBox[{"side_", ",", 
+    RowBox[{"Rectangle", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"xmin_", ",", "ymin_"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"xmax_", ",", "ymax_"}], "}"}]}], "]"}]}], "]"}], ":=", 
+  "\[IndentingNewLine]", 
+  RowBox[{"Switch", "[", 
+   RowBox[{
+   "side", ",", "\[IndentingNewLine]", "Top", ",", "ymax", ",", 
+    "\[IndentingNewLine]", "Bottom", ",", "ymin", ",", "\[IndentingNewLine]", 
+    "Left", ",", "xmin", ",", "\[IndentingNewLine]", "Right", ",", "xmax"}], 
+   "]"}]}]], "Input",
+ CellChangeTimes->{{3.602514249279409*^9, 3.602514299271318*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Width", "[", "r_Rectangle", "]"}], ":=", 
+  RowBox[{"Abs", "[", 
+   RowBox[{
+    RowBox[{"Coord", "[", 
+     RowBox[{"Right", ",", "r"}], "]"}], "-", 
+    RowBox[{"Coord", "[", 
+     RowBox[{"Left", ",", "r"}], "]"}]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.6025140986873617`*^9, 3.602514126365499*^9}, {
+  3.602514303736308*^9, 3.602514331840534*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Height", "[", "r_Rectangle", "]"}], ":=", 
+  RowBox[{"Abs", "[", 
+   RowBox[{
+    RowBox[{"Coord", "[", 
+     RowBox[{"Top", ",", "r"}], "]"}], "-", 
+    RowBox[{"Coord", "[", 
+     RowBox[{"Bottom", ",", "r"}], "]"}]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.602514136041719*^9, 3.602514153257781*^9}, {
+  3.602514334915262*^9, 3.602514353930279*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Area", "[", "r_Rectangle", "]"}], ":=", 
+  RowBox[{
+   RowBox[{"Width", "[", "r", "]"}], "\[Times]", 
+   RowBox[{"Height", "[", "r", "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.602514156050433*^9, 3.6025141732635*^9}}],
+
+Cell["\<\
+The aspect ratio of a rectangle is the proportion of the longest edge to the \
+shorter edge (thus, the aspect ratio is always greater than or equal to one). \
+For a degenerate rectangle (where either the height or width is zero), we \
+will define the aspect ratio as infinite.\
+\>", "Text",
+ CellChangeTimes->{{3.602514487999433*^9, 3.602514531968882*^9}, {
+  3.6025147738404093`*^9, 3.6025147972083683`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"RectAspectRatio", "[", "r_Rectangle", "]"}], ":=", 
+  "\[IndentingNewLine]", 
+  RowBox[{"Which", "[", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{
+      RowBox[{"Width", "[", "r", "]"}], "\[Equal]", "0"}], "\[Or]", 
+     RowBox[{
+      RowBox[{"Height", "[", "r", "]"}], "\[Equal]", "0"}]}], ",", 
+    "\[Infinity]", ",", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"Width", "[", "r", "]"}], "\[GreaterEqual]", 
+     RowBox[{"Height", "[", "r", "]"}]}], ",", 
+    RowBox[{
+     RowBox[{"Width", "[", "r", "]"}], "/", 
+     RowBox[{"Height", "[", "r", "]"}]}], ",", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"Width", "[", "r", "]"}], "<", 
+     RowBox[{"Height", "[", "r", "]"}]}], ",", 
+    RowBox[{
+     RowBox[{"Height", "[", "r", "]"}], "/", 
+     RowBox[{"Width", "[", "r", "]"}]}]}], "\[IndentingNewLine]", 
+   "]"}]}]], "Input",
+ CellChangeTimes->{{3.602514611789196*^9, 3.6025146358873034`*^9}, {
+  3.602514677447462*^9, 3.60251473719063*^9}, {3.602514818784328*^9, 
+  3.602514823319127*^9}}],
+
+Cell[CellGroupData[{
+
+Cell["Examples: Rectangle Functions", "Subsection",
+ CellChangeTimes->{{3.602514937342263*^9, 3.602514949362136*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Block", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"r", "=", 
+     RowBox[{"Rectangle", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"0", ",", "0"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"6", ",", "4"}], "}"}]}], "]"}]}], "}"}], ",", 
+   "\[IndentingNewLine]", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"Width", "[", "r", "]"}], ",", 
+     RowBox[{"Height", "[", "r", "]"}], ",", 
+     RowBox[{"Area", "[", "r", "]"}], ",", 
+     RowBox[{"RectAspectRatio", "[", "r", "]"}]}], "}"}]}], 
+  "\[IndentingNewLine]", "]"}]], "Input",
+ CellChangeTimes->{{3.602515023293647*^9, 3.602515058063097*^9}}],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"6", ",", "4", ",", "24", ",", 
+   FractionBox["3", "2"]}], "}"}]], "Output",
+ CellChangeTimes->{3.602515058695375*^9}]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Sidebar: Visualization", "Section",
+ CellChangeTimes->{{3.6025124309303007`*^9, 3.602512433483222*^9}}],
+
+Cell[TextData[{
+ "The algorithm presented in this paper is independent of a graphical \
+rendering system. However, as we generate rectangles, it is useful to see \
+them plotted for verification. The function below takes a list of rectangles \
+and plots them, with axes and a gridline, using ",
+ StyleBox["Mathematica",
+  FontSlant->"Italic"],
+ "\[CloseCurlyQuote]s graphic capabilities."
+}], "Text",
+ CellChangeTimes->{{3.602515135558648*^9, 3.602515196242763*^9}, {
+  3.6025152311015673`*^9, 3.602515274753561*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"VisualizeRectangles", "[", "rectangles_List", "]"}], ":=", 
+  "\[IndentingNewLine]", 
+  RowBox[{"Graphics", "[", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"Join", "[", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"EdgeForm", "[", 
+         RowBox[{"{", 
+          RowBox[{"Thick", ",", "Black"}], "}"}], "]"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Opacity", "[", 
+         RowBox[{"7", "/", "10"}], "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"Riffle", "[", 
+       RowBox[{"rectangles", ",", 
+        RowBox[{"ColorData", "[", 
+         RowBox[{"\"\<Atoms\>\"", ",", "\"\<ColorList\>\""}], "]"}]}], 
+       "]"}]}], "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"Axes", "\[Rule]", "True"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"GridLines", "\[Rule]", "Automatic"}]}], "\[IndentingNewLine]", 
+   "]"}]}]], "Input",
+ CellChangeTimes->{{3.602515278425621*^9, 3.602515336023107*^9}, {
+  3.6025154173202744`*^9, 3.602515443053116*^9}, {3.602515497079618*^9, 
+  3.6025155330085278`*^9}, {3.602515568790036*^9, 3.602515586754239*^9}, {
+  3.60251562710681*^9, 3.60251568403454*^9}, {3.6025157303815317`*^9, 
+  3.6025157324099073`*^9}, {3.602515788417534*^9, 3.602515789191833*^9}}],
+
+Cell["As an example of the output:", "Text",
+ CellChangeTimes->{{3.6025158046922827`*^9, 3.602515809390152*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"VisualizeRectangles", "[", "\[IndentingNewLine]", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"Rectangle", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"0", ",", "0"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"6", ",", "4"}], "}"}]}], "]"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"Rectangle", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"0", ",", "0"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"3", ",", "2"}], "}"}]}], "]"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"Rectangle", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"0", ",", "2"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"3", ",", "4"}], "}"}]}], "]"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"Rectangle", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"3", ",", "0"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"33", "/", "7"}], ",", 
+        RowBox[{"7", "/", "3"}]}], "}"}]}], "]"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"Rectangle", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"33", "/", "7"}], ",", "0"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"6", ",", 
+        RowBox[{"7", "/", "3"}]}], "}"}]}], "]"}]}], "}"}], "]"}]], "Input",
+ CellChangeTimes->{{3.602515338112273*^9, 3.602515408705777*^9}}],
+
+Cell[BoxData[
+ GraphicsBox[
+  {Opacity[
+    NCache[
+     Rational[7, 10], 0.7]], EdgeForm[{GrayLevel[0], Thickness[Large]}], 
+   RectangleBox[{0, 0}, {6, 4}], 
+   {RGBColor[0.65, 0.7, 0.7], RectangleBox[{0, 0}, {3, 2}]}, 
+   {RGBColor[0.836713, 1., 1.], RectangleBox[{0, 2}, {3, 4}]}, 
+   {RGBColor[0.799435, 0.543572, 0.997559], 
+    RectangleBox[{3, 0}, 
+     NCache[{Rational[33, 7], Rational[7, 3]}, {4.714285714285714, 
+      2.3333333333333335`}]]}, 
+   {RGBColor[0.770565, 0.964309, 0.0442359], 
+    RectangleBox[NCache[{Rational[33, 7], 0}, {4.714285714285714, 0}], 
+     NCache[{6, Rational[7, 3]}, {6, 2.3333333333333335`}]]}},
+  Axes->True,
+  GridLines->Automatic]], "Output",
+ CellChangeTimes->{{3.602515409402169*^9, 3.602515445548841*^9}, {
+   3.602515501469252*^9, 3.602515534721202*^9}, {3.602515573001834*^9, 
+   3.602515588405188*^9}, {3.6025156314626827`*^9, 3.602515638642147*^9}, {
+   3.602515670836679*^9, 3.602515686030405*^9}, 3.602515734677187*^9, 
+   3.602515790798029*^9}]
+}, Open  ]]
+}, Open  ]],
+
+Cell["Filling a Rectangle", "Section",
+ CellChangeTimes->{{3.602512437622459*^9, 3.6025124402294064`*^9}}],
+
+Cell["How Many Children?", "Section",
+ CellChangeTimes->{{3.6025124502226477`*^9, 3.602512469353609*^9}}],
+
+Cell["Calculating Remaining Space", "Section",
+ CellChangeTimes->{{3.602512475795643*^9, 3.602512485641571*^9}}],
+
+Cell["Squarify Algorithm", "Section",
+ CellChangeTimes->{{3.602512491102111*^9, 3.602512495966441*^9}}],
+
+Cell["Dealing with User Data", "Section",
+ CellChangeTimes->{{3.6025124987310333`*^9, 3.602512501265431*^9}, 
+   3.60251281896754*^9}],
+
+Cell[CellGroupData[{
+
+Cell["References", "Section",
+ CellChangeTimes->{{3.60251282128321*^9, 3.602512836855584*^9}}],
+
+Cell[TextData[{
+ "\t",
+ StyleBox["1",
+  FontVariations->{"CompatibilityType"->"Superscript"}],
+ "\t",
+ "M",
+ ".",
+ " ",
+ "Bruls",
+ ",",
+ " ",
+ "K",
+ ".",
+ " ",
+ "Huizing",
+ ",",
+ " ",
+ "and",
+ " ",
+ "J",
+ ".",
+ " ",
+ "van",
+ " ",
+ "Wijk",
+ ",",
+ " ",
+ "\"Squarified treemaps,\"",
+ " ",
+ "in",
+ " ",
+ "Proceedings",
+ " ",
+ "of",
+ " ",
+ "the",
+ " ",
+ "Joint",
+ " ",
+ "Eurographics",
+ " ",
+ "and",
+ " ",
+ "IEEE",
+ " ",
+ "TCVG",
+ " ",
+ "Symposium",
+ " ",
+ "on",
+ " ",
+ "Visualization",
+ ",",
+ " ",
+ "pp",
+ ".",
+ " ",
+ "33",
+ "-",
+ "42",
+ ",",
+ " ",
+ "2000.",
+ " "
+}], "Reference",
+ Editable->False,
+ TaggingRules->{ReferenceNoteData -> ""},
+ CellTags->"00007748"],
+
+Cell[TextData[{
+ "\t",
+ StyleBox["2",
+  FontVariations->{"CompatibilityType"->"Superscript"}],
+ "\t",
+ "http",
+ ":",
+ "//",
+ "en",
+ ".",
+ "wikipedia",
+ ".",
+ "org",
+ "/",
+ "wiki",
+ "/",
+ "File",
+ ":",
+ "Tree_Map",
+ ".",
+ "png"
+}], "Reference",
+ Editable->False,
+ TaggingRules->{ReferenceNoteData -> ""},
+ CellTags->"000035FD"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{740, 867},
+WindowMargins->{{Automatic, 268}, {Automatic, 63}},
+ShowSelection->True,
+FrontEndVersion->"9.0 for Linux x86 (64-bit) (February 7, 2013)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "Info3602488790-5614751"->{
+  Cell[4893, 134, 1545, 27, 101, "Print",
+   CellTags->"Info3602488790-5614751"]},
+ "00007748"->{
+  Cell[16117, 435, 659, 67, 46, "Reference",
+   CellTags->"00007748"]},
+ "000035FD"->{
+  Cell[16779, 504, 326, 24, 30, "Reference",
+   CellTags->"000035FD"]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"Info3602488790-5614751", 17455, 543},
+ {"00007748", 17553, 546},
+ {"000035FD", 17640, 549}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[579, 22, 100, 1, 93, "Title"],
+Cell[682, 25, 183, 5, 51, "Subtitle"],
+Cell[868, 32, 116, 1, 31, "Subsubtitle"],
+Cell[CellGroupData[{
+Cell[1009, 37, 93, 1, 81, "Section"],
+Cell[1105, 40, 1328, 28, 81, "Text"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2470, 73, 99, 1, 81, "Section"],
+Cell[2572, 76, 1514, 27, 221, "Text"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4123, 108, 131, 3, 81, "Section"],
+Cell[4257, 113, 250, 5, 51, "Text"],
+Cell[4510, 120, 237, 6, 51, "Text"],
+Cell[CellGroupData[{
+Cell[4772, 130, 118, 2, 32, "Input"],
+Cell[4893, 134, 1545, 27, 101, "Print",
+ CellTags->"Info3602488790-5614751"]
+}, Open  ]],
+Cell[6453, 164, 277, 5, 51, "Text"],
+Cell[6733, 171, 658, 17, 143, "Input"],
+Cell[7394, 190, 390, 10, 32, "Input"],
+Cell[7787, 202, 389, 10, 32, "Input"],
+Cell[8179, 214, 252, 6, 32, "Input"],
+Cell[8434, 222, 419, 7, 91, "Text"],
+Cell[8856, 231, 1066, 27, 143, "Input"],
+Cell[CellGroupData[{
+Cell[9947, 262, 117, 1, 45, "Subsection"],
+Cell[CellGroupData[{
+Cell[10089, 267, 671, 19, 99, "Input"],
+Cell[10763, 288, 158, 4, 49, "Output"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[10982, 299, 109, 1, 81, "Section"],
+Cell[11094, 302, 516, 10, 91, "Text"],
+Cell[11613, 314, 1323, 28, 231, "Input"],
+Cell[12939, 344, 112, 1, 31, "Text"],
+Cell[CellGroupData[{
+Cell[13076, 349, 1318, 38, 143, "Input"],
+Cell[14397, 389, 999, 21, 267, "Output"]
+}, Open  ]]
+}, Open  ]],
+Cell[15423, 414, 106, 1, 81, "Section"],
+Cell[15532, 417, 105, 1, 51, "Section"],
+Cell[15640, 420, 112, 1, 51, "Section"],
+Cell[15755, 423, 103, 1, 51, "Section"],
+Cell[15861, 426, 134, 2, 51, "Section"],
+Cell[CellGroupData[{
+Cell[16020, 432, 94, 1, 51, "Section"],
+Cell[16117, 435, 659, 67, 46, "Reference",
+ CellTags->"00007748"],
+Cell[16779, 504, 326, 24, 30, "Reference",
+ CellTags->"000035FD"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
